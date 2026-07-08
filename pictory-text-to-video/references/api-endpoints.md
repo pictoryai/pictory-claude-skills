@@ -4,8 +4,7 @@
 
 The base URL comes from the `PICTORY_API_BASE_URL` environment variable. Defaults:
 
-- Development: `https://dev-api.pictorycontent.com/pictoryapis`
-- Production: `https://api.pictory.ai/pictoryapis`
+`https://api.pictory.ai/pictoryapis`
 
 Version prefixes are mixed and must be exact: render/preview/projects/transcription use
 `/v2/`; jobs, media, music, voiceovers, aistudio, avatars, brands, styles, smartlayouts,

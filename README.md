@@ -111,7 +111,7 @@ API call.
 | Environment variable | Required | Description |
 |---|---|---|
 | `PICTORY_API_KEY` | yes | Raw API key (`pictai_…`) from https://app.pictory.ai/api-access |
-| `PICTORY_API_BASE_URL` | no | API base URL. Defaults to the Pictory dev environment; set to `https://api.pictory.ai/pictoryapis` for production |
+| `PICTORY_API_BASE_URL` | no | API base URL. set to `https://api.pictory.ai/pictoryapis` |
 
 ### 4. Verify the setup
 

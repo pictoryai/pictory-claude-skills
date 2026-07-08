@@ -3,7 +3,7 @@
 
 Uses only the Python standard library. Configuration via environment:
   PICTORY_API_KEY       (required) raw API key, starts with "pictai_"
-  PICTORY_API_BASE_URL  (optional) default: https://dev-api.pictorycontent.com/pictoryapis
+  PICTORY_API_BASE_URL  (optional) default: https://api.pictory.ai/pictoryapis
 
 Commands:
   render <payload.json>              Submit a render job, print jobId
@@ -32,7 +32,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
-DEFAULT_BASE_URL = "https://dev-api.pictorycontent.com/pictoryapis"
+DEFAULT_BASE_URL = "https://api.pictory.ai/pictoryapis"
 
 
 def _base_url():
