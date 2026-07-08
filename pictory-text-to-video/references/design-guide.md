@@ -13,6 +13,36 @@ All JSON fragments use the request vocabulary from request-schema.md.
    recipes (§6). Vary layouts across scenes.
 5. **Add voice-over, music, transitions** (§8).
 
+### Creative direction — find the concept before the layouts
+
+The most common failure mode of generated videos is sameness: every video the same arc,
+same length, same palette, same five numbered points. Treat these as levers that
+**change between videos**, not constants — and pick a *concept* before picking layouts:
+
+- **Lead with a creative device, not a template.** Options to rotate: cold-open on the
+  most surprising stat; open with a question the video answers; myth-bust ("everyone
+  believes X — here's why it's wrong"); before/after contrast; a day-in-the-life
+  micro-story; countdown ("3 things nobody tells you about…"); a single recurring
+  metaphor (chess for strategy, weather for market mood, a race for performance).
+- **Give the video a motif.** One accent shape, color, or visual idea that recurs —
+  e.g. the same `circle` chip counting beats, the accent color only ever on the one
+  word that matters, every background shot from above. A motif reads as intentional
+  design; random variety reads as noise.
+- **Three adjectives first.** Write down three adjectives for the video's mood
+  ("urgent, technical, confident" vs "warm, playful, personal") and let them drive
+  every choice: palette, font pairing, animation speed, music mood, transition style,
+  and whether visuals are stock footage, AI-photoreal, or AI-stylized.
+- **Mismatch on purpose, occasionally.** A serious topic with a light palette, or a
+  playful topic shot in premium executive style, is memorable when the script supports
+  it. Deliberate contrast is a tool; accidental contrast is a mistake.
+- **Let the topic pick the visual world.** Finance → macro shots of hands, ledgers,
+  skylines; developer tools → screen glow, terminals, dark UI; wellness → morning
+  light, slow motion, negative space. Name the visual world in one line before writing
+  search queries — every query should live inside it.
+
+If the user asks for consistency with a previous video, replicate its choices exactly;
+variety is the default, consistency is on request.
+
 ## 2. Story structure and pacing
 
 **Arc.** Default shape: hook → 3-5 content beats → recap or key takeaway → CTA/outro.
@@ -115,7 +145,7 @@ your explicit `style` / `top` / `left` / `width` override only what the design c
 Text without a variant is treated as `body` — so an undeclared title that omits
 `fontSize` renders at 20px.
 
-Scale (relative to the ~1080p canvas):
+Scale (px on the default 1080p output):
 
 - Hero/title: 64-90, `"case": "uppercase"`, `"decorations": ["bold"]`
 - Giant stat numeral: 120-160 (accent color)
@@ -138,17 +168,13 @@ of frame width. Percentage strings must be **integers** (`"11%"`, never `"10.5%"
 on any scene showing subtitles (subtitles render bottom-center). All recipes below assume
 16:9 and `hideSubtitles: true`; rebalance vertically for 9:16 (stack, larger fonts).
 
-> **Known engine issue (as of July 2026).** Explicit `top`/`left` on **shape and text**
-> elements are currently ignored at render time: the service seeds a preset anchor
-> (shapes → `top-right`; `heading`/`body` text → `center-center`; `subheading` →
-> `top-center`) and never clears it, and the renderer gives the preset precedence
-> (text-to-video-service `apply_scene_elements/index.js` `applyPosition`; avinya
-> `DataMapper.ts` `transformElement`). Media elements honor `top`/`left` correctly.
-> **Until the fix ships, design each scene with at most one element per anchor slot** —
-> one `subheading` kicker (top), one `heading` (center), one accent shape (top-right) —
-> and move list/checklist detail into the narration. Multi-row recipes below (checklist,
-> numbered chip with overlay digit, stat hero, split layout, frosted panel) will collapse
-> into overlapping center text until then.
+> **Fallback rule.** If a rendered video comes back with shape/text elements ignoring
+> their `top`/`left` and collapsing onto default anchors (shapes → top-right,
+> headings/body → center, subheadings → top-center), the target environment does not
+> support explicit coordinates on those element types yet. Redesign with one element
+> per anchor slot — one `subheading` (top), one `heading` (center), one shape
+> (top-right) — and let media elements, which always honor `top`/`left`, carry the
+> composition. Otherwise, use explicit coordinates freely.
 
 **Hero / title card** — full-bleed visual, overlay 0.5, kicker + title + accent bar:
 
@@ -169,21 +195,25 @@ on any scene showing subtitles (subtitles render bottom-center). All recipes bel
 ]
 ```
 
-**Stat hero** — solid `background.color` or heavy overlay; giant numeral + caption:
+**Stat hero** — solid `background.color` or heavy overlay; numeral on a backdrop chip +
+caption (numbers always sit on a shape — see Standout elements below):
 
 ```jsonc
 "elements": [
+  { "type": "shape", "name": "rectangle", "fill": "rgb(250,204,21)", "borderRadius": 20,
+    "top": "26%", "left": "8%", "width": "30%" },
   { "type": "text", "text": "94%", "textVariant": "heading",
-    "style": { "fontFamily": "Anton", "fontSize": 150, "color": "rgb(250,204,21)",
+    "style": { "fontFamily": "Anton", "fontSize": 150, "color": "rgb(30,27,75)", "alignment": "center",
                "animations": [{ "name": "elastic", "type": "entry", "speed": "medium" }] },
-    "top": "28%", "left": "10%", "width": "40%" },
+    "top": "28%", "left": "8%", "width": "30%" },
   { "type": "text", "text": "of breaches start with a phishing email", "textVariant": "body",
     "style": { "fontFamily": "DM Sans", "fontSize": 34, "color": "rgb(255,255,255)", "alignment": "left" },
     "top": "62%", "left": "10%", "width": "50%" }
 ]
 ```
 
-**Split layout** — text left, media element right (media defaults to 16:9 box):
+**Split layout** — text left, media element right (the media box takes the source
+clip's own aspect ratio; there is no crop control, so budget the space accordingly):
 
 ```jsonc
 "background": { "color": "rgb(24,28,36)" },
@@ -284,9 +314,100 @@ on any scene showing subtitles (subtitles render bottom-center). All recipes bel
 ]
 ```
 
+**Diagrams / connected blocks (tutorials)** — build flowcharts and pipelines from
+shapes: `rectangle` blocks (1:1 aspect — rendered height ≈ element width × frame
+width ÷ frame height) with `body` labels on top, connected by thin `line` shapes
+(300:16 bar) horizontally or a chain of small `circle` dots vertically. Shapes cannot
+animate, so animate the *diagram state across scenes*: redraw the identical diagram at
+identical coordinates each scene and change only the fills — upcoming = dark fill +
+muted stroke, active = accent fill + dark label, done = a second accent (e.g. emerald)
+— with `"sceneTransition": "none"` so consecutive scenes read as one diagram lighting
+up step by step. Full worked payloads: examples.md Examples 4 (horizontal pipeline,
+16:9) and 5 (vertical layer stack, 9:16).
+
 Layering note: elements render in array order — put backdrop shapes before the text that
 sits on them. Vary layouts scene to scene; two identical consecutive layouts is the
 ceiling.
+
+### Standout elements — micro-components that grab attention
+
+Small element combinations that make key information pop. Build each by layering: the
+backdrop shape goes **first** in the `elements` array, the text on top goes after, with
+coordinates that sit the text inside the shape (text `top` ≈ shape `top` + 1-2%).
+
+**Rule for numbers: never render a crucial number as plain text.** Whenever a scene
+shows or highlights a number — a step count, percentage, price, metric, deadline — put
+a **background shape** behind it and the numeral as **`body` text on top of the shape**.
+The shape gives the number a frame the eye lands on; use the palette accent as fill and
+the palette `bg` color for the numeral (dark-on-bright reads best):
+
+```jsonc
+// Number chip — step counts, ranks ("1", "2", "#3")
+{ "type": "shape", "name": "circle", "fill": "rgb(251,191,36)",
+  "top": "20%", "left": "8%", "width": "7%" },
+{ "type": "text", "text": "1", "textVariant": "body",
+  "style": { "fontFamily": "Anton", "fontSize": 56, "color": "rgb(15,23,42)", "alignment": "center" },
+  "top": "22%", "left": "8%", "width": "7%" }
+```
+
+```jsonc
+// Stat badge — percentages, money, KPIs ("94%", "$1.2M", "3x")
+{ "type": "shape", "name": "rectangle", "fill": "rgb(34,211,238)", "borderRadius": 16,
+  "top": "30%", "left": "10%", "width": "22%" },
+{ "type": "text", "text": "94%", "textVariant": "body",
+  "style": { "fontFamily": "Anton", "fontSize": 84, "color": "rgb(15,23,42)", "alignment": "center",
+             "animations": [{ "name": "elastic", "type": "entry", "speed": "medium" }] },
+  "top": "32%", "left": "10%", "width": "22%" }
+```
+
+Give the shape and its text the **same `left`/`width`** with `alignment: "center"` so
+the numeral stays centered in the chip at any width. Multiple numbers in one scene →
+repeat the pair at different coordinates, rotating chip colors from the palette's card
+colors.
+
+Other standout components, most-used first:
+
+| Component | Use for | Construction |
+|---|---|---|
+| Promo badge | "NEW", "-50%", "FREE" | `badge-1`…`badge-8` shape (accent fill) + short uppercase `body` text on top |
+| CTA button mock | closers, offers | `pill` shape + `body` label on top, palette `bg`-colored text |
+| Kicker / eyebrow | section context above a title | `subheading` text, uppercase, accent color, fontSize 24-30 |
+| Accent bar | anchoring a title's left edge | thin `rectangle`, accent fill, width 5-6% |
+| Checkmark row | do's, benefits | `checkmark-1`…`checkmark-6` (green fill) + `body` text to its right |
+| Cross row | don'ts, myths | `cross-1`…`cross-8` (red/rose fill) + `body` text to its right |
+| Arrow callout | pointing at a media element | `arrow-1`…`arrow-19`, accent fill, placed between text and target |
+| Quote mark | testimonials | `quote-1`…`quote-6`, accent fill, above-left of italic quote text |
+| Speech bubble | tips, persona voice | `speech-bubble-2`…`speech-bubble-7` + short `body` text inside |
+| Idea marker | insights, pro tips | `idea-bulb` or `star-1`…`star-6` (amber fill) + `body` tip text beside it |
+| Keyword pop | one hot word in subtitles | not an element: `highlightKeywords: true` + `keywordColor` in subtitleStyle |
+
+```jsonc
+// Promo badge
+{ "type": "shape", "name": "badge-3", "fill": "rgb(244,114,182)",
+  "top": "12%", "left": "78%", "width": "12%" },
+{ "type": "text", "text": "NEW", "textVariant": "body",
+  "style": { "fontFamily": "DM Sans", "fontSize": 30, "color": "rgb(10,10,15)",
+             "decorations": ["bold"], "case": "uppercase", "alignment": "center" },
+  "top": "16%", "left": "78%", "width": "12%" }
+```
+
+```jsonc
+// Do / don't rows (myth-vs-fact, tips scenes)
+{ "type": "shape", "name": "cross-2", "fill": "rgb(251,113,133)", "top": "34%", "left": "10%", "width": "4%" },
+{ "type": "text", "text": "Reuse one password everywhere", "textVariant": "body",
+  "style": { "fontFamily": "DM Sans", "fontSize": 32, "color": "rgb(148,163,184)",
+             "decorations": ["linethrough"], "alignment": "left" },
+  "top": "35%", "left": "16%", "width": "60%" },
+{ "type": "shape", "name": "checkmark-2", "fill": "rgb(52,211,153)", "top": "50%", "left": "10%", "width": "4%" },
+{ "type": "text", "text": "One unique password per account", "textVariant": "body",
+  "style": { "fontFamily": "DM Sans", "fontSize": 32, "color": "rgb(255,255,255)", "alignment": "left" },
+  "top": "51%", "left": "16%", "width": "60%" }
+```
+
+Restraint rule: **one standout component per scene carries the message; two is the
+maximum.** A badge, a stat chip, and an arrow in the same frame compete and all lose.
+Animate the standout (entry `elastic` or `fade`), keep everything else static — shapes
+don't animate, so motion on the text is what draws the eye.
 
 ## 7. Visuals: stock search vs AI generation
 
@@ -306,8 +427,31 @@ looks (cartoon/futuristic/vintage), brand-specific imagery, impossible shots. Co
 credits (video is expensive: veo3.1 ≈ 20 credits/sec) — always confirm with the user
 before putting AI video in many scenes. Prompt like a cinematographer: subject + action
 + setting + lighting + camera ("slow dolly-in on a lone lighthouse at dusk, storm clouds,
-cinematic teal-orange grade"). Use `mediaStyle` to lock the look and keep it consistent
-across the video's AI scenes; set `visualContinuity: true` for scene-to-scene coherence.
+cinematic teal-orange grade"). Set `visualContinuity: true` for scene-to-scene coherence.
+
+**`mediaStyle` rule:** it applies to AI **images** always, but to AI **video** only when
+`prompt` is omitted; on a prompted video it is silently ignored. So: for AI *images*,
+set `mediaStyle` and keep it identical across the video. For AI *video* with a prompt,
+do not set `mediaStyle` — write the style into the prompt text itself and repeat the
+same style words across scenes ("…, cinematic, teal-orange grade" in every prompt).
+
+**AI-generated media *elements*** — `aiVisual` works on scene `elements` too, not just
+backgrounds, and media elements honor explicit `top`/`left` positioning. This is the
+tool for product renders, mascots, stylized icons, and concept art placed *inside* a
+designed layout (e.g. a floating product shot next to a headline). AI *images* are
+billed per image (cheap — use freely once the user opts in); AI *video* elements are
+billed per second of generated footage — reserve for one hero moment.
+For a consistent character/product across scenes, generate with the same model +
+`mediaStyle` and reuse tight prompt wording; `referenceImageUrl` (image models with
+editing support, e.g. `seedream3.0`, `nanobanana`) can lock identity to a user-provided
+image:
+
+```jsonc
+{ "type": "image",
+  "aiVisual": { "prompt": "sleek smart lamp product render, floating, studio lighting, dark background, soft cyan rim light",
+                "model": "seedream3.0", "mediaStyle": "futuristic" },
+  "top": "55%", "left": "68%", "width": "26%" }
+```
 
 **Motion:** image backgrounds get `"settings": { "kenBurnsEffect": true }` (or an
 explicit `videoKenBurns` zoom path); video backgrounds get `"settings": { "loop": true,
@@ -315,15 +459,19 @@ explicit `videoKenBurns` zoom path); video backgrounds get `"settings": { "loop"
 
 ## 8. Audio and transitions
 
-**Voice-over.** One consistent voice per video. `speed` 95-105 for explainers, up to 115
-for energetic shorts. ElevenLabs voices (via `premiumVoiceSettings`) sound best for
-premium content. Defaults if the user has no preference: `Martin` (en). Discover
-options via the voices endpoint (api-endpoints.md).
+**Voice-over.** Always include a `voiceOver` block — omitting it entirely produces a
+**silent video** (there is no implicit default narrator). One consistent voice per
+video: multiple `aiVoices` rotate scene-by-scene, which is a dialog device, not a
+default. `speed` 95-105 for explainers, up to 115 for energetic shorts. ElevenLabs
+voices (via `premiumVoiceSettings`) sound best for premium content. `Martin` (en) is a
+safe pick if the user has no preference; discover options via the voices endpoint
+(api-endpoints.md).
 
-**Music.** `{ "enabled": true, "autoMusic": true, "volume": 0.12 }` is a solid default —
-keep volume 0.08-0.15 under narration so the voice stays intelligible; up to 0.3+ only
-for music-forward videos with no voice-over. For a curated track, search the music API
-by mood/purpose and pass its `audioUrl` as `musicUrl`.
+**Music.** `{ "enabled": true, "autoMusic": true, "volume": 0.12 }` is a solid default.
+**Never omit `volume`** — an omitted volume plays the track at full loudness over the
+narration. Keep 0.08-0.15 under voice-over; up to 0.3+ only for music-forward videos
+with no narration. For a curated track, search the music API by mood/purpose and pass
+its `audioUrl` as `musicUrl`.
 
 **Transitions.** Less is more: `fade` or none for most cuts; `hblur` or `smoothleft` as
 occasional punctuation at chapter boundaries; `circlecrop`/`radial` only for playful
@@ -345,9 +493,12 @@ each ratio rather than copying a 16:9 layout to 9:16.
 - [ ] One palette, one font pairing across all scenes
 - [ ] Every text-over-footage scene has a colorOverlay (0.3-0.55)
 - [ ] On-screen text ≤ 8-10 words per element; no paragraph dumps
+- [ ] Crucial numbers sit on a backdrop shape (chip/badge) as body text, never plain
+- [ ] At most one or two standout components per scene
 - [ ] Layouts vary scene to scene; safe areas respected; bottom clear where subtitles show
 - [ ] `hideSubtitles: true` on designed scenes with text elements
 - [ ] Search queries are action-first and unique per scene
-- [ ] Music volume ≤ 0.15 with voice-over; single consistent voice
+- [ ] `voiceOver` block present (omitting it = silent video); single consistent voice
+- [ ] `backgroundMusic.volume` set explicitly, ≤ 0.15 with voice-over
 - [ ] Transitions subtle and consistent
 - [ ] `videoName`, `aspectRatio`, `saveProject` set

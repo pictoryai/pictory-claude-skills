@@ -106,8 +106,9 @@ Response items: `assetId`, `mediaType` (`video` | `image`), `duration`,
 
 Use this to *verify* that good stock exists for a query, or to show the user options.
 For the actual render, prefer putting the query in the scene's
-`background.searchFilter.query` — the render engine then picks the best full-resolution,
-non-watermarked asset itself. Do **not** paste watermarked preview URLs into `visualUrl`.
+`background.searchFilter.query` — the service picks the best full-resolution asset for
+each scene and automatically avoids reusing an asset another scene already took.
+Do **not** paste watermarked preview URLs into `visualUrl`.
 
 ## Music search
 
@@ -188,6 +189,10 @@ Other useful endpoints: `GET {base}/v1/quota`, `GET {base}/v1/aicredits/usage`,
 - `avatar.avatarId` is set once at the **top level**; per-scene `avatar` is
   position/style overrides only.
 - Renders are not saved to My Projects unless `saveProject: true`.
-- Any scene with `elements` is routed to the v3 storyboard engine automatically —
-  do not set `storyboardVersion` manually.
+- Any scene with `elements` (or `aiVisual`, `colorOverlay`, `maxSubtitleLines`, smart
+  layouts, avatars) is routed to the v3 storyboard engine automatically — do not set
+  `storyboardVersion` manually; any explicit value other than `"v3"` forces v2 and
+  breaks those features.
+- Omitting `voiceOver` entirely renders a **silent** video — there is no default narrator.
+- Omitting `backgroundMusic.volume` plays the music at **full volume** — always set it.
 - Unknown/misspelled fields are silently stripped by validation, not rejected.

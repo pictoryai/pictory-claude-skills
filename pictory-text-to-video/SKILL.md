@@ -15,14 +15,17 @@ your request.
 
 Read these before building the request — do not work from memory:
 
-- **references/design-guide.md** — story arcs, narration pacing, palettes, typography,
-  layout recipes, visual selection, audio. Read this FIRST, always.
+- **references/design-guide.md** — creative direction (concept, motif, mood), story
+  arcs, narration pacing, palettes, typography, layout recipes, visual selection, audio.
+  Read this FIRST, always.
 - **references/request-schema.md** — every field, enum, and validation rule of the
   request body. Read before writing JSON.
 - **references/api-endpoints.md** — auth, render/poll endpoints, visual/music/voice
   search APIs, discovery endpoints, pitfalls.
-- **references/examples.md** — two complete, valid request bodies (designed 16:9
-  explainer; AI-visual 9:16 short).
+- **references/examples.md** — five complete, valid request bodies (designed 16:9
+  explainer; AI-background 9:16 short; product teaser with AI-generated image/video
+  elements; two tutorial diagrams with connected shape blocks — horizontal pipeline
+  and vertical layer stack).
 
 ## Prerequisites
 

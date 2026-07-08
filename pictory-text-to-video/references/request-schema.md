@@ -1,7 +1,7 @@
 # Pictory Storyboard Render API — Request Body Reference
 
-Complete reference for `POST /pictoryapis/v2/video/storyboard/render`. Derived from the
-service's validation schema — anything not listed here is stripped from the request.
+Complete reference for `POST /pictoryapis/v2/video/storyboard/render`. Anything not
+listed here is silently stripped from the request by the API — do not invent fields.
 
 ## Top-level structure
 
@@ -30,6 +30,11 @@ Other top-level fields (advanced / account-specific): `templateId` + `variables`
 `stock-only`, `user-library-only`), `destinations` (vimeo/s3 export), `awsConnectionId`,
 `vimeoConnectionId`, `projectMetadata`, `storyboardVersion`.
 
+**Leave `storyboardVersion` unset.** The service auto-routes to the v3 engine when a
+scene uses `elements`, `aiVisual`, `colorOverlay`, `maxSubtitleLines`, smart layouts,
+avatars, or audio scenes. Setting any explicit value other than `"v3"` forces the v2
+engine and breaks those features.
+
 **Validation rules**
 - `videoWidth` and `videoHeight` must be provided together (or use `aspectRatio` alone).
 - `brandId` and `brandName` are mutually exclusive.
@@ -50,9 +55,11 @@ visual-only scene with no narration text).
   "createSceneOnNewLine": false,        // split into sub-scenes on newlines
   "createSceneOnEndOfSentence": false,  // split into sub-scenes per sentence
   "maxSubtitleLines": 2,                // 1-4; NOT allowed with smartLayout
-  "highlightKeywords": true,            // auto keyword highlighting in subtitles
+  "highlightKeywords": true,            // keyword highlighting in subtitles (defaults ON)
   "hideSubtitles": false,               // narrate without showing subtitle text
-  "minimumDuration": 5,                 // seconds; floor for scene duration
+  "minimumDuration": 5,                 // manual duration (seconds): IS the duration for
+                                        // visual-only scenes; with narration the scene
+                                        // still extends to fit the audio
   "endPauseDuration": 0.5,              // trailing pause in seconds
   "sceneTransition": "fade",            // transition INTO this scene (see Transitions)
   "subtitleStyle": { ... },             // fontStyle override for this scene
@@ -98,7 +105,10 @@ Exactly **one** of `visualUrl`, `color`, or `aiVisual` (or none of those plus a
   // Option B — solid color
   "color": "rgb(15, 23, 42)",
 
-  // Option C — stock library search (best default for realistic footage)
+  // Option C — stock library search (best default for realistic footage).
+  // The service picks the best-matching asset and automatically avoids reusing an
+  // asset another scene already took (no manual dedup needed). If no visual can be
+  // found at all, the job fails with SCENE_BACKGROUND_VISUAL_NOT_FOUND.
   "searchFilter": {
     "query": "aerial coastline waves crashing",   // free-text semantic search
     "keywords": ["ocean", "coastline"],           // 1-10 keywords, 2-100 chars each
@@ -134,6 +144,17 @@ Exactly **one** of `visualUrl`, `color`, or `aiVisual` (or none of those plus a
 `aiVisual` extra fields: `visualContinuity` (bool, chain scene visuals),
 `firstFrameImageUrl` (video only, exclusive with `referenceImageUrls`),
 `referenceImageUrls` (video, 1-2 URLs), `referenceImageUrl` (image only).
+
+**`mediaStyle` rule:** set it for **image** models — it is always applied. For **video**
+models it only has an effect when `prompt` is *omitted* (the auto-generated prompt uses
+it); on a video with an explicit `prompt` it is ignored, so do not set it there — write
+the style into the prompt text instead ("cinematic", "cartoon", "vintage film grain", …).
+
+**AI generation behavior:** insufficient AI credits fail the whole job upfront
+(`INSUFFICIENT_CREDITS`). If a single scene's generation fails, its credits are not
+charged and the scene **silently keeps its stock/original background** — check the
+finished video when using many AI scenes. Credits are charged per image and per
+video-second (rate depends on the model).
 
 Also on scenes: `backgroundBrolls` (array of background objects with optional
 `brollClip: {start,end}` — b-roll cuts over the base background) and `backgroundCorpus`
@@ -180,6 +201,13 @@ back to `body` — so a title that omits `fontSize` renders at 20px.
 }
 ```
 
+Shape rendering notes: `stroke`/`strokeWidth` only take effect on the basic shapes
+(`rectangle`, `circle`, `line`); `borderRadius` only on `rectangle`. Featured shapes
+(badges, arrows, checkmarks, …) accept a `fill` recolor only — other style fields are
+accepted by validation but have no visual effect. Basic `rectangle`/`circle` render 1:1
+(rendered height = width × frame aspect); `line` is a thin 300:16 bar; featured shapes
+keep their source artwork's own aspect ratio (not necessarily square).
+
 ### Media element (video / image)
 
 Exactly **one** of `visualUrl`, `searchFilter`, or `aiVisual`:
@@ -191,10 +219,16 @@ Exactly **one** of `visualUrl`, `searchFilter`, or `aiVisual`:
   // or "visualUrl": "https://...",
   // or "aiVisual": { "prompt": "...", "model": "seedream3.0", "mediaStyle": "minimalist" },
   "colorOverlay": { "color": "rgb(10,10,40)", "opacity": 0.3 },
-  "settings": { "loop": true, "mute": true },   // type "video" only
+  "settings": { "loop": true, "mute": true },   // type "video" only; both default true
   "position": "center-right", "width": "38%"
 }
 ```
+
+Media element rendering notes: the box takes the **source media's real aspect ratio**
+(16:9 is only a fallback when dimensions can't be read); there is no height field and no
+crop control. `width` defaults to 30% and may auto-shrink to fit the frame from the
+given `top`/`left`. A media element whose visual can't be resolved (no stock match,
+failed generation) is **silently dropped** from the scene rather than failing the render.
 
 ## fontStyle object
 
@@ -215,8 +249,8 @@ Used by `subtitleStyle` (global + scene) and text-element `style`.
   "decorations": ["bold"],            // bold | underline | italics | linethrough
   "case": "uppercase",                 // uppercase | lowercase | capitalize | smallcapitalize
   "paragraphWidth": "80%",
-  "showBoxBackground": true,           // draw the backgroundColor box
-  "showBullet": false, "bulletSize": 12, "bulletFillColor": "rgb(255,200,40)",
+  "showBoxBackground": true,           // SUBTITLE styles only — ignored on scene text elements
+  "showBullet": false, "bulletSize": 12, "bulletFillColor": "rgb(255,200,40)",  // subtitle styles only
   "animations": [                      // 1-2 entries (one entry + one exit)
     { "name": "fade", "type": "entry", "speed": "medium" },
     { "name": "fade", "type": "exit",  "speed": "fast" }
@@ -251,6 +285,16 @@ Used by `subtitleStyle` (global + scene) and text-element `style`.
 
 `aiVoices` and `externalVoice` are mutually exclusive (globally and per-scene).
 
+**Behavior notes:**
+- Omitting `voiceOver` entirely produces a **silent video** — there is no implicit
+  default narrator; subtitle timing is then estimated from text length. Always include
+  a `voiceOver` block (with `enabled: false` for deliberately silent videos).
+- Multiple `aiVoices` **rotate across scenes** (scene *i* uses voice *i* mod N) — useful
+  for dialog-style videos, surprising otherwise. Use exactly one voice for a single
+  narrator.
+- If a speaker name can't be resolved (numeric id → name, case-insensitive → provider
+  voice id), the job fails with an "invalid speaker" error.
+
 ## Background music
 
 ```jsonc
@@ -258,10 +302,15 @@ Used by `subtitleStyle` (global + scene) and text-element `style`.
   "enabled": true,
   "autoMusic": true,                   // Pictory picks a matching track
   // OR "musicUrl": "https://.../track.mp3",   (autoMusic and musicUrl are exclusive)
-  "volume": 0.12,                      // 0-1; keep low under narration
+  "volume": 0.12,                      // 0-1 — ALWAYS SET THIS: omitted = full volume (1.0)
   "clips": [{ "start": 0, "end": 30 }] // optional, max 10
 }
 ```
+
+If `volume` is omitted, a newly added track plays at **full volume** and will drown the
+narration — always set it explicitly (0.08-0.15 under voice-over). Scene-level
+`backgroundMusic` accepts only `{ "enabled": bool }` (mute music for that scene); track
+and volume cannot be changed per scene.
 
 ## Logo & avatar
 
