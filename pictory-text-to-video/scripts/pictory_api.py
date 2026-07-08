@@ -63,6 +63,7 @@ def _request(method, path, body=None, query=None):
         data=data,
         method=method,
         # Pictory uses the raw key in Authorization -- no "Bearer" prefix.
+        # Cloudflare bot protection rejects urllib's default UA (403, error 1010).
         headers={
             "Authorization": _api_key(),
             "Content-Type": "application/json",

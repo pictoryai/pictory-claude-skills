@@ -138,6 +138,18 @@ of frame width. Percentage strings must be **integers** (`"11%"`, never `"10.5%"
 on any scene showing subtitles (subtitles render bottom-center). All recipes below assume
 16:9 and `hideSubtitles: true`; rebalance vertically for 9:16 (stack, larger fonts).
 
+> **Known engine issue (as of July 2026).** Explicit `top`/`left` on **shape and text**
+> elements are currently ignored at render time: the service seeds a preset anchor
+> (shapes → `top-right`; `heading`/`body` text → `center-center`; `subheading` →
+> `top-center`) and never clears it, and the renderer gives the preset precedence
+> (text-to-video-service `apply_scene_elements/index.js` `applyPosition`; avinya
+> `DataMapper.ts` `transformElement`). Media elements honor `top`/`left` correctly.
+> **Until the fix ships, design each scene with at most one element per anchor slot** —
+> one `subheading` kicker (top), one `heading` (center), one accent shape (top-right) —
+> and move list/checklist detail into the narration. Multi-row recipes below (checklist,
+> numbered chip with overlay digit, stat hero, split layout, frosted panel) will collapse
+> into overlapping center text until then.
+
 **Hero / title card** — full-bleed visual, overlay 0.5, kicker + title + accent bar:
 
 ```jsonc
