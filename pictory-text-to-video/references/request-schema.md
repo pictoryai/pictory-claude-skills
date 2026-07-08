@@ -240,7 +240,7 @@ Used by `subtitleStyle` (global + scene) and text-element `style`.
   "fontUrl": "https://.../font.ttf",   // custom font (then fontFamily is free-form, required)
   "fontSize": 64,                      // integer ≥ 1 (canvas px; see design guide for scale)
   "color": "rgb(255,255,255)",
-  "backgroundColor": "rgba(0,0,0,0.6)",  // text box background
+  "backgroundColor": "rgba(0,0,0,0.6)",  // text box background; "rgba(0,0,0,0)" hides the default translucent strip
   "keywordColor": "rgb(255,200,40)",   // highlighted-keyword color (subtitles)
   "shadowColor": "rgb(0,0,0)",
   "shadowWidth": "2%",
@@ -249,7 +249,7 @@ Used by `subtitleStyle` (global + scene) and text-element `style`.
   "decorations": ["bold"],            // bold | underline | italics | linethrough
   "case": "uppercase",                 // uppercase | lowercase | capitalize | smallcapitalize
   "paragraphWidth": "80%",
-  "showBoxBackground": true,           // SUBTITLE styles only — ignored on scene text elements
+  "showBoxBackground": true,           // false hides the text background; on scene text elements supported only on environments with the style_utility fix (older ones ignore it — use transparent backgroundColor instead)
   "showBullet": false, "bulletSize": 12, "bulletFillColor": "rgb(255,200,40)",  // subtitle styles only
   "animations": [                      // 1-2 entries (one entry + one exit)
     { "name": "fade", "type": "entry", "speed": "medium" },

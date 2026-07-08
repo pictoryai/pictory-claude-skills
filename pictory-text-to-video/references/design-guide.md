@@ -154,6 +154,17 @@ Scale (px on the default 1080p output):
 - Body/support: 20-28, max ~2 short lines
 - Set `"alignment"` to match the layout (left for left-anchored text blocks)
 
+**Line-wrap budget — check every text element.** The renderer measures text at
+`fontSize × 4/3` px against a reference frame **1280 px** wide (16:9; **720 px** for
+9:16), so one line holds roughly **width% × 1750 / fontSize characters** on 16:9
+(width% × 980 / fontSize on 9:16) — about 15% fewer for bold or wide glyphs (M, W).
+Text over budget wraps and grows the element *downward*, which is the top cause of
+elements overlapping whatever sits below them. Check headings, chip/pill labels, and
+diagram block labels against the budget: shorten the text, shrink the font, or widen
+the element. Each rendered line is ≈ `fontSize × 1.6 / 720` of frame height (~11% at
+fontSize 48) — reserve that much vertical room below any heading you *intend* to run
+to two lines, and never place another element inside it.
+
 **Text animations:** default entry `fade` at `slow`/`medium` speed so viewers can read;
 add exit `fade` `fast` when the element should clear before the scene ends. `typewriter`
 or `text reveal` for hero titles, `drift` (direction up) for kickers, `elastic` for
@@ -203,7 +214,7 @@ caption (numbers always sit on a shape — see Standout elements below):
   { "type": "shape", "name": "rectangle", "fill": "rgb(250,204,21)", "borderRadius": 20,
     "top": "26%", "left": "8%", "width": "30%" },
   { "type": "text", "text": "94%", "textVariant": "heading",
-    "style": { "fontFamily": "Anton", "fontSize": 150, "color": "rgb(30,27,75)", "alignment": "center",
+    "style": { "backgroundColor": "rgba(0,0,0,0)", "fontFamily": "Anton", "fontSize": 150, "color": "rgb(30,27,75)", "alignment": "center",
                "animations": [{ "name": "elastic", "type": "entry", "speed": "medium" }] },
     "top": "28%", "left": "8%", "width": "30%" },
   { "type": "text", "text": "of breaches start with a phishing email", "textVariant": "body",
@@ -238,7 +249,7 @@ clip's own aspect ratio; there is no crop control, so budget the space according
   { "type": "shape", "name": "circle", "fill": "rgb(251,191,36)",
     "top": "20%", "left": "8%", "width": "7%" },
   { "type": "text", "text": "1", "textVariant": "body",
-    "style": { "fontFamily": "Anton", "fontSize": 56, "color": "rgb(15,23,42)" },
+    "style": { "backgroundColor": "rgba(0,0,0,0)", "fontFamily": "Anton", "fontSize": 56, "color": "rgb(15,23,42)" },
     "top": "22%", "left": "11%", "width": "3%" },
   { "type": "text", "text": "Use a password manager", "textVariant": "heading",
     "style": { "fontFamily": "Space Grotesk", "fontSize": 58, "color": "rgb(255,255,255)",
@@ -290,7 +301,7 @@ clip's own aspect ratio; there is no crop control, so budget the space according
   { "type": "shape", "name": "rectangle", "fill": "rgba(255,255,255,0.88)", "borderRadius": 24,
     "top": "22%", "left": "26%", "width": "48%" },
   { "type": "text", "text": "3 things to remember", "textVariant": "heading",
-    "style": { "fontFamily": "Montserrat", "fontSize": 44, "color": "rgb(15,23,42)",
+    "style": { "backgroundColor": "rgba(0,0,0,0)", "fontFamily": "Montserrat", "fontSize": 44, "color": "rgb(15,23,42)",
                "decorations": ["bold"], "alignment": "center" },
     "top": "32%", "left": "30%", "width": "40%" }
 ]
@@ -308,7 +319,7 @@ clip's own aspect ratio; there is no crop control, so budget the space according
     "top": "36%", "left": "10%", "width": "80%" },
   { "type": "shape", "name": "pill", "fill": "rgb(34,211,238)", "top": "56%", "left": "40%", "width": "20%" },
   { "type": "text", "text": "pictory.ai", "textVariant": "body",
-    "style": { "fontFamily": "DM Sans", "fontSize": 30, "color": "rgb(8,8,12)", "decorations": ["bold"],
+    "style": { "backgroundColor": "rgba(0,0,0,0)", "fontFamily": "DM Sans", "fontSize": 30, "color": "rgb(8,8,12)", "decorations": ["bold"],
                "alignment": "center" },
     "top": "58%", "left": "40%", "width": "20%" }
 ]
@@ -322,7 +333,10 @@ animate, so animate the *diagram state across scenes*: redraw the identical diag
 identical coordinates each scene and change only the fills — upcoming = dark fill +
 muted stroke, active = accent fill + dark label, done = a second accent (e.g. emerald)
 — with `"sceneTransition": "none"` so consecutive scenes read as one diagram lighting
-up step by step. Full worked payloads: examples.md Examples 4 (horizontal pipeline,
+up step by step. Labels sitting on a colored block get the default translucent text
+strip behind them — hide it with `"backgroundColor": "rgba(0,0,0,0)"` in the label's
+`style` (`showBoxBackground: false` is the documented equivalent once supported by the
+target environment). Full worked payloads: examples.md Examples 4 (horizontal pipeline,
 16:9) and 5 (vertical layer stack, 9:16).
 
 Layering note: elements render in array order — put backdrop shapes before the text that
@@ -335,6 +349,12 @@ Small element combinations that make key information pop. Build each by layering
 backdrop shape goes **first** in the `elements` array, the text on top goes after, with
 coordinates that sit the text inside the shape (text `top` ≈ shape `top` + 1-2%).
 
+**Rule: text on a shape never keeps the default text strip.** Every label that sits on
+a chip, badge, pill, or block gets `"backgroundColor": "rgba(0,0,0,0)"` in its `style` —
+the shape *is* the background, and the engine's translucent text box would land on top
+of the fill. (Text floating directly on footage or a scene color keeps the strip — there
+it earns its keep as legibility backing.) All snippets below and examples.md follow this.
+
 **Rule for numbers: never render a crucial number as plain text.** Whenever a scene
 shows or highlights a number — a step count, percentage, price, metric, deadline — put
 a **background shape** behind it and the numeral as **`body` text on top of the shape**.
@@ -346,7 +366,7 @@ the palette `bg` color for the numeral (dark-on-bright reads best):
 { "type": "shape", "name": "circle", "fill": "rgb(251,191,36)",
   "top": "20%", "left": "8%", "width": "7%" },
 { "type": "text", "text": "1", "textVariant": "body",
-  "style": { "fontFamily": "Anton", "fontSize": 56, "color": "rgb(15,23,42)", "alignment": "center" },
+  "style": { "backgroundColor": "rgba(0,0,0,0)", "fontFamily": "Anton", "fontSize": 56, "color": "rgb(15,23,42)", "alignment": "center" },
   "top": "22%", "left": "8%", "width": "7%" }
 ```
 
@@ -355,7 +375,7 @@ the palette `bg` color for the numeral (dark-on-bright reads best):
 { "type": "shape", "name": "rectangle", "fill": "rgb(34,211,238)", "borderRadius": 16,
   "top": "30%", "left": "10%", "width": "22%" },
 { "type": "text", "text": "94%", "textVariant": "body",
-  "style": { "fontFamily": "Anton", "fontSize": 84, "color": "rgb(15,23,42)", "alignment": "center",
+  "style": { "backgroundColor": "rgba(0,0,0,0)", "fontFamily": "Anton", "fontSize": 84, "color": "rgb(15,23,42)", "alignment": "center",
              "animations": [{ "name": "elastic", "type": "entry", "speed": "medium" }] },
   "top": "32%", "left": "10%", "width": "22%" }
 ```
@@ -386,7 +406,7 @@ Other standout components, most-used first:
 { "type": "shape", "name": "badge-3", "fill": "rgb(244,114,182)",
   "top": "12%", "left": "78%", "width": "12%" },
 { "type": "text", "text": "NEW", "textVariant": "body",
-  "style": { "fontFamily": "DM Sans", "fontSize": 30, "color": "rgb(10,10,15)",
+  "style": { "backgroundColor": "rgba(0,0,0,0)", "fontFamily": "DM Sans", "fontSize": 30, "color": "rgb(10,10,15)",
              "decorations": ["bold"], "case": "uppercase", "alignment": "center" },
   "top": "16%", "left": "78%", "width": "12%" }
 ```
@@ -493,7 +513,10 @@ each ratio rather than copying a 16:9 layout to 9:16.
 - [ ] One palette, one font pairing across all scenes
 - [ ] Every text-over-footage scene has a colorOverlay (0.3-0.55)
 - [ ] On-screen text ≤ 8-10 words per element; no paragraph dumps
+- [ ] Every text element passes the line-wrap budget (chars ≤ width% × 1750 / fontSize
+      on 16:9; × 980 on 9:16); intended two-line headings have vertical room below
 - [ ] Crucial numbers sit on a backdrop shape (chip/badge) as body text, never plain
+- [ ] Every text element sitting on a shape has `backgroundColor: "rgba(0,0,0,0)"`
 - [ ] At most one or two standout components per scene
 - [ ] Layouts vary scene to scene; safe areas respected; bottom clear where subtitles show
 - [ ] `hideSubtitles: true` on designed scenes with text elements
