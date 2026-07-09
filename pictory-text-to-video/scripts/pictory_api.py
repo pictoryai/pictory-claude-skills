@@ -271,7 +271,7 @@ def cmd_music_options(_args):
 # When the actual TTF is resolvable (Pictory CDN or Google Fonts, cached locally),
 # line breaks are computed with real glyph metrics via Pillow instead.
 _LINT_CONSTANTS = {"16:9": (1750, 4.5, 7.2), "9:16": (980, 8.0, 12.8)}
-_SHAPE_ASPECTS = {"rectangle": 1.0, "circle": 1.0, "pill": 3.2, "line": 300 / 16}
+_SHAPE_ASPECTS = {"rectangle": 1.0, "circle": 1.0, "pill": 4.1, "line": 300 / 16}
 _REF_WIDTH = {"16:9": 1280, "9:16": 720}
 _TEXT_PADDING_EM = 0.25  # renderer pads the text span 0.25em per side
 _FONT_CACHE_DIR = os.path.join(os.path.expanduser("~"), ".cache", "pictory-skill-fonts")
@@ -302,7 +302,8 @@ def _font_url_candidates(family, bold):
     weights += ["Bold"] if bold else []
     weights += ["Regular"]
 
-    compact = base_family.replace(" ", "")
+    # Font files use the family's canonical CamelCase ("Space mono" -> SpaceMono)
+    compact = "".join(w[:1].upper() + w[1:] for w in base_family.split(" "))
     urls = []
     for weight in weights:
         urls.append("https://pictory-static.pictorycontent.com/static/fonts/"
@@ -445,7 +446,7 @@ def cmd_lint(args):
             if style.get("backgroundColor") != "rgba(0,0,0,0)":
                 problems.append(f"{label}: missing transparent backgroundColor rgba(0,0,0,0)")
             want_top = s_center - cap_h - (lines - 1) / 2 * pitch
-            slack = 2.5 if pair["name"] == "pill" else 1.0
+            slack = 1.5 if pair["name"] == "pill" else 1.0
             if abs(top - want_top) > slack:
                 problems.append(f"{label}: top {top:.0f}% off-center — use {want_top:.0f}% "
                                 f"(shape center {s_center:.1f}%)")
