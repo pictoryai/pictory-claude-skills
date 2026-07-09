@@ -81,8 +81,11 @@ Author the full JSON against references/request-schema.md:
   specific mood — then pick a track via `scripts/pictory_api.py music --mood <Mood>` and
   pass its `audioUrl` as `musicUrl`.
 
-Save the payload to a file (e.g. `video-request.json` in the scratchpad), and run the
-design-guide quality checklist against it before submitting.
+Save the payload to a file (e.g. `video-request.json` in the scratchpad), run the
+design-guide quality checklist against it, then run
+`python3 scripts/pictory_api.py lint video-request.json` — it mechanically verifies
+text wrap lines, on-shape label centering, chip sizing, and transparent label
+backgrounds. Fix every finding before submitting.
 
 ### Step 4 — Render and poll
 
