@@ -288,9 +288,9 @@ def _pct(value):
 def _font_url_candidates(family, bold):
     """URL candidates for a family, derived by convention — no hard-coded font list.
 
-    1. Pictory CDN mirrors avinya getFontUrl(): /static/fonts/<Family_With_Underscores>/
+    1. Pictory's public font CDN: /static/fonts/<Family_With_Underscores>/
        <FamilyNoSpaces>-<Weight>.ttf
-    2. Google Fonts repo (families avinya loads via next/font/google):
+    2. Google Fonts repo (the renderer's source for most catalog families):
        raw.githubusercontent.com/google/fonts/main/ofl/<familylower>/<FamilyNoSpaces>-<Weight>.ttf
        (plus the variable-font [wght] file some families ship instead).
     """
