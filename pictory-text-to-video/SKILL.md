@@ -33,7 +33,8 @@ Read these before building the request — do not work from memory:
    (`echo ${PICTORY_API_KEY:+set}`). If unset, ask the user for their key (from
    https://app.pictory.ai/api-access) and have them export it. Never print the key.
 2. **Base URL** — `PICTORY_API_BASE_URL` env var if set, otherwise the default in
-   `scripts/pictory_api.py` (currently the Pictory dev environment).
+   `scripts/pictory_api.py` (Pictory production, `https://api.pictory.ai/pictoryapis`).
+   Set `PICTORY_API_BASE_URL` in `.env` only when a non-production environment is needed.
 
 ## Workflow
 
