@@ -249,7 +249,7 @@ Used by `subtitleStyle` (global + scene) and text-element `style`.
   "decorations": ["bold"],            // bold | underline | italics | linethrough
   "case": "uppercase",                 // uppercase | lowercase | capitalize | smallcapitalize
   "paragraphWidth": "80%",
-  "showBoxBackground": true,           // false hides the text background; on scene text elements supported only on environments with the style_utility fix (older ones ignore it — use transparent backgroundColor instead)
+  "showBoxBackground": true,           // false hides the text background; on scene text elements only in recent API versions (older ones ignore it — use transparent backgroundColor instead)
   "showBullet": false, "bulletSize": 12, "bulletFillColor": "rgb(255,200,40)",  // subtitle styles only
   "animations": [                      // 1-2 entries (one entry + one exit)
     { "name": "fade", "type": "entry", "speed": "medium" },
