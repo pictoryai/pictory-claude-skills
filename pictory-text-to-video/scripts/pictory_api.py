@@ -20,8 +20,11 @@ Commands:
   music [--query Q] [--mood M] [--purpose P] [--max N]
                                      Search background music tracks
   music-options                      List valid music moods/genres/purposes
+  lint <payload.json>                Check text wrap lines, on-shape label centering,
+                                     and shape sizing before submitting (16:9, 9:16)
 
-Exit codes: 0 success, 1 API/HTTP error, 2 usage error, 3 job failed, 4 timeout.
+Exit codes: 0 success, 1 API/HTTP error or lint findings, 2 usage error,
+3 job failed, 4 timeout.
 """
 
 import argparse
@@ -231,6 +234,80 @@ def cmd_music_options(_args):
         print(json.dumps(resp.get("data", resp) if isinstance(resp, dict) else resp, indent=2))
 
 
+# --- payload layout lint -----------------------------------------------------
+# Empirical renderer geometry, verified frame-by-frame against rendered videos:
+# text is measured at fontSize*4/3 px on a reference canvas 1280x720 (16:9) or
+# 720x1280 (9:16). Derived constants per aspect ratio, all in percent of frame:
+#   chars/line ~ width% * WRAP / fontSize      (wrap budget)
+#   line height ~ fontSize / LINE              (vertical pitch per wrapped line)
+#   cap height ~ fontSize / CAP                (digit/uppercase glyph height;
+#                                               also the top -> optical-center offset)
+_LINT_CONSTANTS = {"16:9": (1750, 4.5, 7.2), "9:16": (980, 8.0, 12.8)}
+_SHAPE_ASPECTS = {"rectangle": 1.0, "circle": 1.0, "pill": 3.2, "line": 300 / 16}
+
+
+def _pct(value):
+    return float(str(value).rstrip("%"))
+
+
+def cmd_lint(args):
+    payload = _load_payload(args.payload)
+    ar = payload.get("aspectRatio", "16:9")
+    if ar not in _LINT_CONSTANTS:
+        print(f"lint: aspect ratio {ar} not supported (16:9 and 9:16 only)", file=sys.stderr)
+        sys.exit(2)
+    wrap_c, line_c, cap_c = _LINT_CONSTANTS[ar]
+    frame_ar = 16 / 9 if ar == "16:9" else 9 / 16
+    problems = []
+
+    for si, scene in enumerate(payload.get("scenes", []), 1):
+        elements = scene.get("elements") or []
+        shapes = [e for e in elements if e.get("type") == "shape"
+                  and e.get("name") in _SHAPE_ASPECTS and "top" in e and "left" in e]
+        for el in elements:
+            if el.get("type") != "text" or "top" not in el:
+                continue
+            style = el.get("style") or {}
+            font = style.get("fontSize", 20)
+            text, width = el.get("text", ""), _pct(el.get("width", "90%"))
+            top = _pct(el["top"])
+            lines = max(1, -(-len(text) // (width / 100 * wrap_c / font)))
+            line_h, cap_h = font / line_c, font / cap_c
+
+            if lines > 2:
+                problems.append(f"S{si} '{text[:30]}': wraps to {lines} lines "
+                                f"(budget {width / 100 * wrap_c / font:.0f} chars/line) — shorten or shrink")
+
+            # text-on-shape pair: same left/width as a shape in this scene
+            pair = next((s for s in shapes if s.get("left") == el.get("left")
+                         and s.get("width") == el.get("width")), None)
+            if not pair:
+                continue
+            label = f"S{si} '{text[:20]}' on {pair['name']}"
+            s_top, s_w = _pct(pair["top"]), _pct(pair["width"])
+            s_h = s_w * frame_ar / _SHAPE_ASPECTS[pair["name"]]
+            s_center = s_top + s_h / 2
+            if lines > 1:
+                problems.append(f"{label}: label wraps to {lines} lines — on-shape labels must be single-line")
+            if (el.get("style") or {}).get("backgroundColor") != "rgba(0,0,0,0)":
+                problems.append(f"{label}: missing transparent backgroundColor rgba(0,0,0,0)")
+            want_top = s_center - cap_h - (lines - 1) / 2 * line_h
+            if abs(top - want_top) > 1.0:
+                problems.append(f"{label}: top {top:.0f}% off-center — use {want_top:.0f}% "
+                                f"(shape center {s_center:.1f}%)")
+            min_h = 2.2 * cap_h + (lines - 1) * line_h
+            if s_h < min_h:
+                want_w = min_h * _SHAPE_ASPECTS[pair["name"]] / frame_ar
+                problems.append(f"{label}: shape too small for fontSize {font} "
+                                f"(height {s_h:.1f}% < {min_h:.1f}%) — widen shape to ~{want_w:.0f}%")
+
+    if problems:
+        print("\n".join(problems))
+        sys.exit(1)
+    print(f"lint OK: {sum(len(s.get('elements') or []) for s in payload.get('scenes', []))} elements, "
+          f"no wrap/centering/sizing issues ({ar})")
+
+
 def main():
     parser = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -273,6 +350,10 @@ def main():
     p = sub.add_parser(
         "music-options", help="list music moods/genres/purposes")
     p.set_defaults(func=cmd_music_options)
+
+    p = sub.add_parser("lint", help="check payload text wrap/centering/shape sizing")
+    p.add_argument("payload")
+    p.set_defaults(func=cmd_lint)
 
     args = parser.parse_args()
     args.func(args)

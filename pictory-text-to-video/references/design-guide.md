@@ -364,10 +364,10 @@ the palette `bg` color for the numeral (dark-on-bright reads best):
 ```jsonc
 // Number chip — step counts, ranks ("1", "2", "#3")
 { "type": "shape", "name": "circle", "fill": "rgb(251,191,36)",
-  "top": "20%", "left": "8%", "width": "7%" },
+  "top": "20%", "left": "8%", "width": "11%" },
 { "type": "text", "text": "1", "textVariant": "body",
   "style": { "backgroundColor": "rgba(0,0,0,0)", "fontFamily": "Anton", "fontSize": 56, "color": "rgb(15,23,42)", "alignment": "center" },
-  "top": "18%", "left": "8%", "width": "7%" }
+  "top": "22%", "left": "8%", "width": "11%" }
 ```
 
 ```jsonc
@@ -397,6 +397,29 @@ colors.
 Example: 9:16 circle chip at top 16% / width 16% → H = 9%, center 20.5%; a fontSize-60
 numeral goes at top = 20.5 − 60/12.8 ≈ **16%** (level with the chip's own top — the
 naive "chip top + 1-2%" placement sits visibly low). The snippets below follow this.
+
+**Chip size follows the font.** Size the chip so its rendered height is ≈ 2.5× the
+numeral's cap height (cap height ≈ fontSize/7.2 [16:9] or fontSize/12.8 [9:16] percent
+of frame height). For circles that reduces to: **width ≈ fontSize/5 on 16:9,
+fontSize/3 on 9:16**. Smaller chips crowd the digit; larger ones read as empty
+badges. A fontSize-56 numeral therefore takes an 11%-wide circle on 16:9, a
+fontSize-40 numeral an 8%-wide one.
+
+**Multi-line labels and the elements below.** Always count lines before placing
+anything: n = ceil(chars ÷ wrap budget from §5). A label's glyph block is
+capHeight + (n−1) × lineHeight tall, where lineHeight ≈ fontSize/4.5 (16:9) or
+fontSize/8 (9:16) percent of frame height. Then:
+
+- shape height must be ≥ 2.2 × capHeight + (n−1) × lineHeight;
+- label `top` = shapeCenter − capHeight − (n−1)/2 × lineHeight (n=1 reduces to the
+  single-line formula above);
+- anything placed below must clear max(shape bottom, label top + n × lineHeight)
+  plus a 2-3% margin.
+
+On-shape labels should stay single-line — reword before resizing. **Mechanical check:
+run `python3 scripts/pictory_api.py lint payload.json` before every submit** — it
+computes wrap lines for every text element and validates on-shape label centering,
+shape sizing, and transparent label backgrounds against these formulas.
 
 Other standout components, most-used first:
 
@@ -474,6 +497,11 @@ tool for product renders, mascots, stylized icons, and concept art placed *insid
 designed layout (e.g. a floating product shot next to a headline). AI *images* are
 billed per image (cheap — use freely once the user opts in); AI *video* elements are
 billed per second of generated footage — reserve for one hero moment.
+AI image elements are **opaque rectangles** — an isolated object generated on a white
+studio background reads as a white card sitting on the scene. When placing an object
+on a solid-color scene, name the scene's background color in the prompt ("centered on
+a plain solid dark indigo background #1E1B4B"); full-bleed illustrations that fill
+their own frame don't need this.
 For a consistent character/product across scenes, generate with the same model +
 `mediaStyle` and reuse tight prompt wording; `referenceImageUrl` (image models with
 editing support, e.g. `seedream3.0`, `nanobanana`) can lock identity to a user-provided
@@ -528,7 +556,8 @@ each ratio rather than copying a 16:9 layout to 9:16.
 - [ ] On-screen text ≤ 8-10 words per element; no paragraph dumps
 - [ ] Every text element passes the line-wrap budget (chars ≤ width% × 1750 / fontSize
       on 16:9; × 980 on 9:16); intended two-line headings have vertical room below
-- [ ] Crucial numbers sit on a backdrop shape (chip/badge) as body text, never plain
+- [ ] Crucial numbers sit on a backdrop shape (chip/badge) as body text, never plain,
+      with the chip sized to the font (circle width ≈ fontSize/5 on 16:9, /3 on 9:16)
 - [ ] Every text element sitting on a shape has `backgroundColor: "rgba(0,0,0,0)"`
 - [ ] At most one or two standout components per scene
 - [ ] Layouts vary scene to scene; safe areas respected; bottom clear where subtitles show
@@ -538,3 +567,4 @@ each ratio rather than copying a 16:9 layout to 9:16.
 - [ ] `backgroundMusic.volume` set explicitly, ≤ 0.15 with voice-over
 - [ ] Transitions subtle and consistent
 - [ ] `videoName`, `aspectRatio`, `saveProject` set
+- [ ] `scripts/pictory_api.py lint <payload>` passes
