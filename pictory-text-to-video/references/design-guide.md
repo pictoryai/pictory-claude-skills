@@ -162,8 +162,13 @@ Text over budget wraps and grows the element *downward*, which is the top cause 
 elements overlapping whatever sits below them. Check headings, chip/pill labels, and
 diagram block labels against the budget: shorten the text, shrink the font, or widen
 the element. Each rendered line is ≈ `fontSize × 1.6 / 720` of frame height (~11% at
-fontSize 48) — reserve that much vertical room below any heading you *intend* to run
-to two lines, and never place another element inside it.
+fontSize 48) for average-metric fonts — but **line pitch is font-specific**: the real
+line box is `ascent + descent + 0.2em` from the font's own metrics, and tall-metric
+families run far bigger (frame-measured: Poppins ≈ fontSize/3.3 of frame height per
+line on 16:9, ~35% more than the generic constant). Reserve that much vertical room
+below any heading you *intend* to run to two lines, never place another element inside
+it, and trust `scripts/pictory_api.py lint` — it computes the exact pitch from the
+actual TTF — over the generic constant.
 
 **Text animations:** default entry `fade` at `slow`/`medium` speed so viewers can read;
 add exit `fade` `fast` when the element should clear before the scene ends. `typewriter`
@@ -326,8 +331,10 @@ clip's own aspect ratio; there is no crop control, so budget the space according
 ```
 
 **Diagrams / connected blocks (tutorials)** — build flowcharts and pipelines from
-shapes: `rectangle` blocks (1:1 aspect — rendered height ≈ element width × frame
-width ÷ frame height) with `body` labels on top, connected by thin `line` shapes
+shapes: `rectangle` blocks with a `borderRadius` (which is what makes them render
+1:1 in pixels — height ≈ element width × frame width ÷ frame height; sharp
+rectangles render height% = width% instead, see the formula note above) with `body`
+labels on top, connected by thin `line` shapes
 (300:16 bar) horizontally or a chain of small `circle` dots vertically. Shapes cannot
 animate, so animate the *diagram state across scenes*: redraw the identical diagram at
 identical coordinates each scene and change only the fills — upcoming = dark fill +
@@ -390,7 +397,10 @@ colors.
 (`fontSize / 12.8` on 9:16). To center a label on a shape:
 
 1. Shape height H% = shape width% × 16/9 (on 16:9; × 9/16 on 9:16) ÷ the shape's own
-   aspect ratio (rectangle/circle = 1:1, pill ≈ 3.2:1, line = 300:16).
+   aspect ratio (circle = 1:1, pill ≈ 3.2:1, line = 300:16). **Rectangles are special
+   (frame-measured):** with a `borderRadius` they render pixel-square (1:1, use the
+   formula); a *sharp* rectangle (no borderRadius) instead renders height% = width%
+   numerically — a plain 6%-wide accent bar is 6% of frame height tall, not 10.7%.
 2. Label `top` = shapeTop + H/2 − fontSize/7.2 (16:9) or − fontSize/12.8 (9:16),
    rounded to an integer.
 
