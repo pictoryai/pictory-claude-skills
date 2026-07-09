@@ -216,7 +216,7 @@ caption (numbers always sit on a shape — see Standout elements below):
   { "type": "text", "text": "94%", "textVariant": "heading",
     "style": { "backgroundColor": "rgba(0,0,0,0)", "fontFamily": "Anton", "fontSize": 150, "color": "rgb(30,27,75)", "alignment": "center",
                "animations": [{ "name": "elastic", "type": "entry", "speed": "medium" }] },
-    "top": "28%", "left": "8%", "width": "30%" },
+    "top": "32%", "left": "8%", "width": "30%" },
   { "type": "text", "text": "of breaches start with a phishing email", "textVariant": "body",
     "style": { "fontFamily": "DM Sans", "fontSize": 34, "color": "rgb(255,255,255)", "alignment": "left" },
     "top": "62%", "left": "10%", "width": "50%" }
@@ -367,7 +367,7 @@ the palette `bg` color for the numeral (dark-on-bright reads best):
   "top": "20%", "left": "8%", "width": "7%" },
 { "type": "text", "text": "1", "textVariant": "body",
   "style": { "backgroundColor": "rgba(0,0,0,0)", "fontFamily": "Anton", "fontSize": 56, "color": "rgb(15,23,42)", "alignment": "center" },
-  "top": "22%", "left": "8%", "width": "7%" }
+  "top": "18%", "left": "8%", "width": "7%" }
 ```
 
 ```jsonc
@@ -377,13 +377,26 @@ the palette `bg` color for the numeral (dark-on-bright reads best):
 { "type": "text", "text": "94%", "textVariant": "body",
   "style": { "backgroundColor": "rgba(0,0,0,0)", "fontFamily": "Anton", "fontSize": 84, "color": "rgb(15,23,42)", "alignment": "center",
              "animations": [{ "name": "elastic", "type": "entry", "speed": "medium" }] },
-  "top": "32%", "left": "10%", "width": "22%" }
+  "top": "38%", "left": "10%", "width": "22%" }
 ```
 
 Give the shape and its text the **same `left`/`width`** with `alignment: "center"` so
 the numeral stays centered in the chip at any width. Multiple numbers in one scene →
 repeat the pair at different coordinates, rotating chip colors from the palette's card
 colors.
+
+**Vertical centering formula (empirical).** A single-line label's optical center sits
+≈ `fontSize / 7.2` percent of frame height below the element's `top` on 16:9
+(`fontSize / 12.8` on 9:16). To center a label on a shape:
+
+1. Shape height H% = shape width% × 16/9 (on 16:9; × 9/16 on 9:16) ÷ the shape's own
+   aspect ratio (rectangle/circle = 1:1, pill ≈ 3.2:1, line = 300:16).
+2. Label `top` = shapeTop + H/2 − fontSize/7.2 (16:9) or − fontSize/12.8 (9:16),
+   rounded to an integer.
+
+Example: 9:16 circle chip at top 16% / width 16% → H = 9%, center 20.5%; a fontSize-60
+numeral goes at top = 20.5 − 60/12.8 ≈ **16%** (level with the chip's own top — the
+naive "chip top + 1-2%" placement sits visibly low). The snippets below follow this.
 
 Other standout components, most-used first:
 

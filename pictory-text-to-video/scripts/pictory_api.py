@@ -3,7 +3,7 @@
 
 Uses only the Python standard library. Configuration via environment:
   PICTORY_API_KEY       (required) raw API key, starts with "pictai_"
-  PICTORY_API_BASE_URL  (optional) default: https://api.pictory.ai/pictoryapis
+  PICTORY_API_BASE_URL  (optional) default: https://dev-api.pictorycontent.com/pictoryapis
 
 Commands:
   render <payload.json>              Submit a render job, print jobId
@@ -32,7 +32,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
-DEFAULT_BASE_URL = "https://api.pictory.ai/pictoryapis"
+DEFAULT_BASE_URL = "https://dev-api.pictorycontent.com/pictoryapis"
 
 
 def _base_url():
@@ -226,7 +226,8 @@ def cmd_music_options(_args):
     ]:
         resp = _request("GET", path)
         print(f"## {label}")
-        print(json.dumps(resp.get("data", resp), indent=2))
+        # These endpoints return a bare list; render/search-style endpoints wrap in {data}.
+        print(json.dumps(resp.get("data", resp) if isinstance(resp, dict) else resp, indent=2))
 
 
 def main():
