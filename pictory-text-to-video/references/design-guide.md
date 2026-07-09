@@ -397,7 +397,7 @@ colors.
 (`fontSize / 12.8` on 9:16). To center a label on a shape:
 
 1. Shape height H% = shape width% × 16/9 (on 16:9; × 9/16 on 9:16) ÷ the shape's own
-   aspect ratio (circle = 1:1, pill ≈ 3.2:1, line = 300:16). **Rectangles are special
+   aspect ratio (circle = 1:1, pill ≈ 4.1:1 (frame-measured), line = 300:16). **Rectangles are special
    (frame-measured):** with a `borderRadius` they render pixel-square (1:1, use the
    formula); a *sharp* rectangle (no borderRadius) instead renders height% = width%
    numerically — a plain 6%-wide accent bar is 6% of frame height tall, not 10.7%.
